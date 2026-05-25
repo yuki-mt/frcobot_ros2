@@ -109,15 +109,15 @@ file(COPY_FILE "libfairino/lib/libfairino.so.2.3.5"
 "${CMAKE_INSTALL_PREFIX}/lib/libfairino.so.2.3.5" 
 )
 
-# file(CREATE_LINK 
-# "${CMAKE_INSTALL_PREFIX}/lib/libfairino.so.2.3.0" 
-# "${CMAKE_INSTALL_PREFIX}/lib/libfairino.so.2" 
-# SYMBOLIC)
+file(CREATE_LINK 
+"${CMAKE_INSTALL_PREFIX}/lib/libfairino.so.2.3.5" 
+"${CMAKE_INSTALL_PREFIX}/lib/libfairino.so.2" 
+SYMBOLIC)
 
-# file(CREATE_LINK 
-# "${CMAKE_INSTALL_PREFIX}/lib/libfairino.so.2" 
-# "${CMAKE_INSTALL_PREFIX}/lib/libfairino.so" 
-# SYMBOLIC)
+file(CREATE_LINK 
+"${CMAKE_INSTALL_PREFIX}/lib/libfairino.so.2" 
+"${CMAKE_INSTALL_PREFIX}/lib/libfairino.so" 
+SYMBOLIC)
 
 
 if(BUILD_TESTING)

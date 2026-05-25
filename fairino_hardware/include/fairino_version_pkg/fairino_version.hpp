@@ -48,7 +48,8 @@ class robot_version_thread:public rclcpp::Node{
             "fairino_hardware_v3_9_0",
             "fairino_hardware_v3_9_0_1",
             "fairino_hardware_v3_9_4",
-            "fairino_hardware_v3_9_5"};//版本的名称
+            "fairino_hardware_v3_9_5",
+            "fairino_hardware_v3_9_6"};//版本的名称
 
 
     };
