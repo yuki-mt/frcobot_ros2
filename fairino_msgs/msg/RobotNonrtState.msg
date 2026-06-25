@@ -115,5 +115,8 @@ uint16[8] extpioinput
 uint16[8] extpiooutput
 uint16[4] extadcinput
 uint16[4] extadcoutput
-uint8 exaxiscoordid
 uint8 reconnect_flag
+uint8 exaxiscoordid
+float64 slave_status_1
+float64 slave_status_2
+int32 slave_domain_id

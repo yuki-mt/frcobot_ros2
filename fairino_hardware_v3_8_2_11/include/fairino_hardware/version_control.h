@@ -21,6 +21,6 @@ V3.0.4 新增扩展轴状态数组
 #define VERSION_MSG_MINOR 0
 #define VERSION_MSG_MINOR2 4
 
-#define CHN_VERSION
-//#define ENG_VERSION
+// #define CHN_VERSION
+#define ENG_VERSION
 #endif
