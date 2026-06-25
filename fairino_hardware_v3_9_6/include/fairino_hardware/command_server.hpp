@@ -634,6 +634,23 @@ public:
     std::string SetLaserWeldingErrStateExtDiNum(std::string para);
     std::string ExtAxisGetParamConfig(std::string para);
 
+    //SDK连接管理
+    std::string CloseRPC(std::string para);
+    std::string GetSoftwareVersion(std::string para);
+
+    //实时状态配置
+    std::string SetRobotRealtimeStateConfig(std::string para);
+    std::string GetRobotRealtimeStateConfig(std::string para);
+    std::string GetRobotRealTimeState(std::string para);
+    std::string AddRobotRealtimeState(std::string para);
+    std::string DeleteRobotRealtimeState(std::string para);
+
+    //力与关节阻抗控制
+    std::string ForceAndJointImpedanceStartStop(std::string para);
+
+    //轴传感器
+    std::string AxleSensorRegWrite(std::string para);
+
 
 private:
 
@@ -1242,7 +1259,16 @@ private:
     {"SetLaserWeldingErrResetExtDoNum",&robot_command_thread::SetLaserWeldingErrResetExtDoNum},
     {"SetLaserWeldingRunningStateExtDiNum",&robot_command_thread::SetLaserWeldingRunningStateExtDiNum},
     {"SetLaserWeldingErrStateExtDiNum",&robot_command_thread::SetLaserWeldingErrStateExtDiNum},
-    {"ExtAxisGetParamConfig",&robot_command_thread::ExtAxisGetParamConfig}
+    {"ExtAxisGetParamConfig",&robot_command_thread::ExtAxisGetParamConfig},
+    {"CloseRPC",&robot_command_thread::CloseRPC},
+    {"GetSoftwareVersion",&robot_command_thread::GetSoftwareVersion},
+    {"SetRobotRealtimeStateConfig",&robot_command_thread::SetRobotRealtimeStateConfig},
+    {"GetRobotRealtimeStateConfig",&robot_command_thread::GetRobotRealtimeStateConfig},
+    {"GetRobotRealTimeState",&robot_command_thread::GetRobotRealTimeState},
+    {"AddRobotRealtimeState",&robot_command_thread::AddRobotRealtimeState},
+    {"DeleteRobotRealtimeState",&robot_command_thread::DeleteRobotRealtimeState},
+    {"ForceAndJointImpedanceStartStop",&robot_command_thread::ForceAndJointImpedanceStartStop},
+    {"AxleSensorRegWrite",&robot_command_thread::AxleSensorRegWrite}
     };
 };
 

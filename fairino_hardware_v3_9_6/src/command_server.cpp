@@ -380,7 +380,7 @@ robot_command_thread::robot_command_thread(const std::string node_name):rclcpp::
     /*********************************************************************************************/
      _state_publisher = this->create_publisher<robot_feedback_msg>("nonrt_state_data",1);
     _locktimer1 = this->create_wall_timer(10ms,std::bind(&robot_command_thread::_state_recv_callback,this));//创建一个定时器任务用于获取非实时状态数据,触发间隔为100ms
-    _locktimer2 = this->create_wall_timer(100ms,std::bind(&robot_command_thread::_ping_recv_callback,this));//创建一个定时器任务用于ping机器人,触发间隔为100ms
+    _locktimer2 = this->create_wall_timer(100ms,std::bind(&robot_command_thread::_ping_recv_callback, this));
 }
 
 
@@ -11419,6 +11419,161 @@ std::string robot_command_thread::ExtAxisGetParamConfig(std::string para){
 
 
 
+/**
+ * @brief 关闭RPC连接
+ * @retval 0-成功，其他-错误码
+ */
+std::string robot_command_thread::CloseRPC(std::string para){
+    int res = _ptr_robot->CloseRPC();
+    return std::string(std::to_string(res));
+}
+
+/**
+ * @brief 获取机器人软件版本信息
+ * @param[out] robotModel 机器人型号
+ * @param[out] webVersion web版本
+ * @param[out] controllerVersion 控制器版本
+ * @retval 0-成功，其他-错误码
+ */
+std::string robot_command_thread::GetSoftwareVersion(std::string para){
+    char robotModel[64];
+    char webVersion[64];
+    char controllerVersion[64];
+    int res = _ptr_robot->GetSoftwareVersion(robotModel, webVersion, controllerVersion);
+    return std::string(std::to_string(res) + "," + std::string(robotModel) + "," +
+                       std::string(webVersion) + "," + std::string(controllerVersion));
+}
+
+/**
+ * @brief 设置机器人实时状态反馈配置
+ * @param [in] para-第一个参数为周期(ms)，后续参数为RobotState枚举值序列
+ * @retval 0-成功，其他-错误码
+ */
+std::string robot_command_thread::SetRobotRealtimeStateConfig(std::string para){
+    std::list<std::string> list;
+    _splitString2List(para,list);
+
+    int period = std::stoi(list.front());list.pop_front();
+    std::vector<RobotState> states;
+    while(!list.empty()){
+        states.push_back(static_cast<RobotState>(std::stoi(list.front())));
+        list.pop_front();
+    }
+    int res = _ptr_robot->SetRobotRealtimeStateConfig(states, period);
+    return std::string(std::to_string(res));
+}
+
+/**
+ * @brief 获取机器人实时状态反馈配置
+ * @param[out] period 周期(ms)
+ * @param[out] states RobotState枚举值序列
+ * @retval 0-成功，其他-错误码
+ */
+std::string robot_command_thread::GetRobotRealtimeStateConfig(std::string para){
+    std::vector<RobotState> states;
+    int period;
+    int res = _ptr_robot->GetRobotRealtimeStateConfig(states, period);
+    std::string result = std::to_string(res) + "," + std::to_string(period);
+    for(auto& s : states){
+        result += "," + std::to_string(static_cast<int>(s));
+    }
+    return result;
+}
+
+/**
+ * @brief 获取机器人单帧实时状态数据
+ * @return 错误码+关节当前位置6个+工具当前位置6个+关节当前扭矩6个
+ * @retval 0-成功，其他-错误码
+ */
+std::string robot_command_thread::GetRobotRealTimeState(std::string para){
+    ROBOT_STATE_PKG pkg;
+    int res = _ptr_robot->GetRobotRealTimeState(&pkg);
+    std::string result = std::to_string(res);
+    for(int i = 0; i < 6; i++){
+        result += "," + std::to_string(pkg.jt_cur_pos[i]);
+    }
+    for(int i = 0; i < 6; i++){
+        result += "," + std::to_string(pkg.tl_cur_pos[i]);
+    }
+    for(int i = 0; i < 6; i++){
+        result += "," + std::to_string(pkg.jt_cur_tor[i]);
+    }
+    return result;
+}
+
+/**
+ * @brief 往实时状态配置中添加一项数据
+ * @param [in] para-RobotState枚举值
+ * @retval 0-成功，其他-错误码
+ */
+std::string robot_command_thread::AddRobotRealtimeState(std::string para){
+    RobotState state = static_cast<RobotState>(std::stoi(para));
+    int res = _ptr_robot->AddRobotRealtimeState(state);
+    return std::string(std::to_string(res));
+}
+
+/**
+ * @brief 从实时状态配置中删除一项数据
+ * @param [in] para-RobotState枚举值
+ * @retval 0-成功，其他-错误码
+ */
+std::string robot_command_thread::DeleteRobotRealtimeState(std::string para){
+    RobotState state = static_cast<RobotState>(std::stoi(para));
+    int res = _ptr_robot->DeleteRobotRealtimeState(state);
+    return std::string(std::to_string(res));
+}
+
+/**
+ * @brief 力与关节阻抗控制启停
+ * @param [in] para-status(状态), impedanceFlag(阻抗标志), lamdeDain[6], KGain[6], BGain[6], dragMaxTcpVel, dragMaxTcpOriVel
+ * @retval 0-成功，其他-错误码
+ */
+std::string robot_command_thread::ForceAndJointImpedanceStartStop(std::string para){
+    std::list<std::string> list;
+    _splitString2List(para,list);
+
+    int status = std::stoi(list.front());list.pop_front();
+    int impedanceFlag = std::stoi(list.front());list.pop_front();
+
+    std::vector<double> lamdeDain(6);
+    for(int i = 0; i < 6; i++){
+        lamdeDain[i] = std::stod(list.front());list.pop_front();
+    }
+    std::vector<double> KGain(6);
+    for(int i = 0; i < 6; i++){
+        KGain[i] = std::stod(list.front());list.pop_front();
+    }
+    std::vector<double> BGain(6);
+    for(int i = 0; i < 6; i++){
+        BGain[i] = std::stod(list.front());list.pop_front();
+    }
+    double dragMaxTcpVel = std::stod(list.front());list.pop_front();
+    double dragMaxTcpOriVel = std::stod(list.front());list.pop_front();
+
+    int res = _ptr_robot->ForceAndJointImpedanceStartStop(status, impedanceFlag, lamdeDain, KGain, BGain, dragMaxTcpVel, dragMaxTcpOriVel);
+    return std::string(std::to_string(res));
+}
+
+/**
+ * @brief 轴传感器寄存器写入
+ * @param [in] para-devAddr(设备地址),regHAddr(寄存器高地址),regLAddr(寄存器低地址),regNum(寄存器数量),data1(数据1),data2(数据2),isNoBlock(是否非阻塞)
+ * @retval 0-成功，其他-错误码
+ */
+std::string robot_command_thread::AxleSensorRegWrite(std::string para){
+    std::list<std::string> list;
+    _splitString2List(para,list);
+
+    int devAddr = std::stoi(list.front());list.pop_front();
+    int regHAddr = std::stoi(list.front());list.pop_front();
+    int regLAddr = std::stoi(list.front());list.pop_front();
+    int regNum = std::stoi(list.front());list.pop_front();
+    int data1 = std::stoi(list.front());list.pop_front();
+    int data2 = std::stoi(list.front());list.pop_front();
+    int isNoBlock = std::stoi(list.front());list.pop_front();
+
+    int res = _ptr_robot->AxleSensorRegWrite(devAddr, regHAddr, regLAddr, regNum, data1, data2, isNoBlock);
+    return std::string(std::to_string(res));
+}
 
 /**
  * @brief 数据端口topic监听回调函数
@@ -11623,8 +11778,10 @@ void robot_command_thread::_state_recv_callback(){
         msg.extadcoutput[1] = ctrl_state.extAOState[1];
         msg.extadcoutput[2] = ctrl_state.extAOState[2];
         msg.extadcoutput[3] = ctrl_state.extAOState[3];
-        msg.exaxiscoordid = ctrl_state.exaxisCoordID;
         msg.reconnect_flag = res;
+        msg.exaxiscoordid = ctrl_state.exaxisCoordID;
+
+
         // _state_publisher->publish(msg);
         // RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME),"exaxistatus1=%d",msg.exaxistatus1[0]);
         // RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME),"j1_cur_pos=%f",msg.j1_cur_pos);
