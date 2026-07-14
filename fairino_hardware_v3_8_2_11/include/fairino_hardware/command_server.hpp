@@ -225,6 +225,12 @@ private:
     std::vector<JointPos> _cmd_jnt_pos_list;//存储关节数据点
     std::vector<DescPose> _cmd_cart_pos_list;//存储笛卡尔数据点
     std::string _controller_ip;
+    // 状態取得関数
+    std::string GetActualJointPosDegree(std::string para);
+    std::string GetActualTCPPose(std::string para);
+    std::string GetToolDI(std::string para);
+    std::string GetDI(std::string para);
+
     const std::map<std::string,std::string(robot_command_thread::*)(std::string)> _fr_function_list{
     {"JNTPoint",&robot_command_thread::defJntPosition},
     {"CARTPoint",&robot_command_thread::defCartPosition},
@@ -345,7 +351,11 @@ private:
     {"WeldingStartReWeldAfterBreakOff",&robot_command_thread::WeldingStartReWeldAfterBreakOff},
     {"WeldingAbortWeldAfterBreakOff",&robot_command_thread::WeldingAbortWeldAfterBreakOff},
     {"PhotoelectricSensorTCPCalibration",&robot_command_thread::PhotoelectricSensorTCPCalibration},
-    {"GetProgramRunErrCode",&robot_command_thread::GetProgramRunErrCode}
+    {"GetProgramRunErrCode",&robot_command_thread::GetProgramRunErrCode},
+    {"GetActualJointPosDegree",&robot_command_thread::GetActualJointPosDegree},
+    {"GetActualTCPPose",&robot_command_thread::GetActualTCPPose},
+    {"GetToolDI",&robot_command_thread::GetToolDI},
+    {"GetDI",&robot_command_thread::GetDI}
     };
 };
 

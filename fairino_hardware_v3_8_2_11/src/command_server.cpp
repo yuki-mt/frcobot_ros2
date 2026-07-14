@@ -221,7 +221,7 @@ robot_command_thread::robot_command_thread(const std::string node_name):rclcpp::
     //开始初始化
     int connect_count = 0;
     _ptr_robot = std::make_unique<FRRobot>();
-    _ptr_robot->SetReConnectParam(true,86400000,500);
+    _ptr_robot->SetReConnectParam(true,60000,5000);
     _ptr_robot->LoggerInit(0,"/home/fairino/ros2_ws/fairino_SDK_log/cppsdk.log",5);
     _ptr_robot->SetLoggerLevel(3);
     while(connect_count <_connect_retry_SDK){
@@ -248,7 +248,7 @@ robot_command_thread::robot_command_thread(const std::string node_name):rclcpp::
  */
 robot_command_thread::~robot_command_thread()
 {
-    //_ptr_robot->CloseRPC();
+    _ptr_robot->CloseRPC();
     _ptr_robot->~FRRobot();
 }
 
@@ -2741,8 +2741,9 @@ robot_recv_thread::robot_recv_thread(const std::string node_name):rclcpp::Node(n
     _socketfd1 = socket(AF_INET,SOCK_STREAM,0);//状态获取端口只有TCP
 
     if(_socketfd1 == -1){
-        RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME),msgout[msg_id(socket_create_failed)]);
-        exit(0);//创建套字失败,丢出错误
+        RCLCPP_WARN(rclcpp::get_logger(LOGGER_NAME),msgout[msg_id(socket_create_failed)]);
+        RCLCPP_WARN(rclcpp::get_logger(LOGGER_NAME),"state feedback port disabled, RPC service still available");
+        return;
     }else{
         RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME),msgout[msg_id(socket_create_success)]);
         struct sockaddr_in tcp_client1;
@@ -2754,8 +2755,8 @@ robot_recv_thread::robot_recv_thread(const std::string node_name):rclcpp::Node(n
         //尝试连接控制器
         int res1 = connect(_socketfd1,(struct sockaddr *)&tcp_client1,sizeof(tcp_client1));
         if(0 != res1){
-            RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME),msgout[msg_id(socket_connect_failed)]);
-            exit(0);//连接失败,丢出错误并返回
+            RCLCPP_WARN(rclcpp::get_logger(LOGGER_NAME),msgout[msg_id(socket_connect_failed)]);
+            RCLCPP_WARN(rclcpp::get_logger(LOGGER_NAME),"state feedback port disabled, RPC service still available");
         }else{
             RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME),msgout[msg_id(socket_connect_success)]);
             //将socket设置成非阻塞模式
@@ -3255,4 +3256,59 @@ void robot_recv_thread::_state_recv_callback(){
             global_exaxis_pos()[i] = ctrl_state.exaxis_status[i].exAxisPosBack;
         }
     }
+}
+
+// ===== 状態取得関数 =====
+
+std::string robot_command_thread::GetActualJointPosDegree(std::string para){
+    uint8_t flag = 0;
+    JointPos jPos;
+    int res = _ptr_robot->GetActualJointPosDegree(flag, &jPos);
+    return std::to_string(res) + "," +
+           std::to_string(jPos.jPos[0]) + "," +
+           std::to_string(jPos.jPos[1]) + "," +
+           std::to_string(jPos.jPos[2]) + "," +
+           std::to_string(jPos.jPos[3]) + "," +
+           std::to_string(jPos.jPos[4]) + "," +
+           std::to_string(jPos.jPos[5]);
+}
+
+std::string robot_command_thread::GetActualTCPPose(std::string para){
+    uint8_t flag = 0;
+    DescPose pose;
+    int res = _ptr_robot->GetActualTCPPose(flag, &pose);
+    return std::to_string(res) + "," +
+           std::to_string(pose.tran.x) + "," +
+           std::to_string(pose.tran.y) + "," +
+           std::to_string(pose.tran.z) + "," +
+           std::to_string(pose.rpy.rx) + "," +
+           std::to_string(pose.rpy.ry) + "," +
+           std::to_string(pose.rpy.rz);
+}
+
+std::string robot_command_thread::GetToolDI(std::string para){
+    int id = 0;
+    uint8_t block = 0;
+    uint8_t result = 0;
+    // Parse: "id,block"
+    std::regex search_para(",");
+    std::regex_token_iterator<std::string::const_iterator> iter(para.begin(), para.end(), search_para, -1);
+    std::regex_token_iterator<std::string::const_iterator> end;
+    if (iter != end) id = atoi(iter->str().c_str()); iter++;
+    if (iter != end) block = atoi(iter->str().c_str());
+    int res = _ptr_robot->GetToolDI(id, block, &result);
+    return std::to_string(res) + "," + std::to_string(result);
+}
+
+std::string robot_command_thread::GetDI(std::string para){
+    int id = 0;
+    uint8_t block = 0;
+    uint8_t result = 0;
+    std::regex search_para(",");
+    std::regex_token_iterator<std::string::const_iterator> iter(para.begin(), para.end(), search_para, -1);
+    std::regex_token_iterator<std::string::const_iterator> end;
+    if (iter != end) id = atoi(iter->str().c_str()); iter++;
+    if (iter != end) block = atoi(iter->str().c_str());
+    int res = _ptr_robot->GetDI(id, block, &result);
+    return std::to_string(res) + "," + std::to_string(result);
 }
